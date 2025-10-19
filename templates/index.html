@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Test  — automatyczny start</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:0;background:#f2f4f8}
+    .wrap{max-width:900px;margin:36px auto;padding:20px;background:#fff;border-radius:10px;box-shadow:0 6px 20px rgba(10,20,40,0.06)}
+    video{width:100%;border-radius:8px;background:#000}
+    .info{margin-top:12px;color:#333}
+    .error{color:#b91c1c;margin-top:8px}
+    /* prosty modal */
+    .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45)}
+    .card{background:#fff;padding:20px;border-radius:8px;max-width:420px;width:90%;box-shadow:0 10px 30px rgba(0,0,0,0.2)}
+    .btn{padding:8px 12px;border-radius:6px;border:0;cursor:pointer}
+    .primary{background:#2563eb;color:#fff}
+    .muted{background:#eee;color:#222}
+  </style>
+</head>
+<body>
+  <div class=</h1>
+    <p class="info">Strona. Przeglądarka poprosi o zgodę — musisz ją potwierdzić, aby zobaczyć obraz.</p>
+
+    <video id="video" autoplay playsinline muted></video>
+    <div class="error" id="error" style="display:none"></div>
+  </div>
+
+  <!-- Własny modal informacyjny (opcjonalny) -->
+  <div id="preModal" class="modal" style="display:flex">
+    <div class="card">
+      <h3>Prosimy o zgodę na test strony</h3>
+      <p>Ta strona potrzebuje, aby pokazać podgląd. Po kliknięciu „Dalej” przeglądarka wyświetli oficjalny monit z prośbą o zgodę.</p>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button id="cancelBtn" class="btn muted">Anuluj</button>
+        <button id="okBtn" class="btn primary">Dalej — poproś o dostęp</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const video = document.getElementById('video');
+const errorEl = document.getElementById('error');
+const preModal = document.getElementById('preModal');
+const okBtn = document.getElementById('okBtn');
+const cancelBtn = document.getElementById('cancelBtn');
+
+let stream = null;
+
+async function startCamera() {
+  errorEl.style.display = 'none';
+  try {
+    // Żądaj tylko wideo — bez audio
+    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    video.srcObject = stream;
+    // usuń modal jeśli nadal widoczny
+    preModal.style.display = 'none';
+  } catch (err) {
+    // Obsługa błędów
+    console.error('Błąd getUserMedia:', err);
+    preModal.style.display = 'none'; // ukryj modal, pokaż info błędu
+    if (err && (err.name === 'NotAllowedError' || err.name === 'SecurityError')) {
+      errorEl.textContent = 'Dostęp do kamery zablokowany przez użytkownika lub przeglądarkę. Zezwól na dostęp w monicie przeglądarki lub w ustawieniach witryny.';
+    } else if (err && err.name === 'NotFoundError') {
+      errorEl.textContent = 'Nie znaleziono kamery — sprawdź, czy urządzenie jest podłączone.';
+    } else {
+      errorEl.textContent = 'Błąd: ' + (err && err.message ? err.message : String(err));
+    }
+    errorEl.style.display = 'block';
+  }
+}
+
+// Przycisk w modal: użytkownik zgadza się, wywołujemy getUserMedia
+okBtn.addEventListener('click', () => {
+  // ukryj modal natychmiast (opcjonalne)
+  preModal.style.display = 'none';
+  // Wywołaj start kamery
+  startCamera();
+});
+
+// Anuluj — ukryj modal i nie wywołuj monitu
+cancelBtn.addEventListener('click', () => {
+  preModal.style.display = 'none';
+  errorEl.textContent = 'Test przerwany przez użytkownika.';
+  errorEl.style.display = 'block';
+});
+
+// AUTOMATYCZNE wywołanie: możesz opcjonalnie odkomentować poniższe,
+// żeby spróbować od razu bez pokazywania własnego modal (niektóre przeglądarki wymagają interakcji).
+// window.addEventListener('load', () => startCamera());
+</script>
+</body>
+</html>
